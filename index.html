@@ -49,25 +49,16 @@
   <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
   <script>
-    // -------------------------
-    // 1️⃣ Inițializare Supabase
-    // -------------------------
     const supabaseUrl = "https://hhsebjsbqtvmpugvlbix.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhoc2VianNicXR2bXB1Z3ZsYml4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMjE3MjgsImV4cCI6MjA3Mzc5NzcyOH0.p9_Nx4xtOr3YaNC2KFW6gRk-PGp9LtcFJbFbdTd2e2Q";
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    // -------------------------
-    // 2️⃣ Setări generale
-    // -------------------------
     const goal = 11111;
     const taxes = 3000;
     const car = 5000;
     let total = 0;
-    let historyData = []; // redenumit pentru a nu fi conflict cu window.history
+    let historyData = [];
 
-    // -------------------------
-    // 3️⃣ Încarcă datele din Supabase
-    // -------------------------
     async function loadData() {
       const { data, error } = await supabase
         .from('savings')
@@ -79,25 +70,26 @@
         return;
       }
 
-      if (data.length) {
-        total = data[data.length - 1].total;
-        historyData = data.map(item => ({
-          date: item.date,
-          amount: item.amount,
-          total: item.total
-        }));
-      } else {
-        total = 0;
-        historyData = [];
+      // Dacă tabelul este gol, adaugă prima linie de test
+      if (data.length === 0) {
+        const { error: insertError } = await supabase.from('savings').insert([
+          { date: new Date().toISOString().slice(0,10), amount: 1000, total: 1000 }
+        ]);
+        if (insertError) console.error("Eroare la inserare test:", insertError);
+        return loadData(); // reîncarcă datele după insert
       }
+
+      total = data[data.length - 1].total;
+      historyData = data.map(item => ({
+        date: item.date,
+        amount: item.amount,
+        total: item.total
+      }));
 
       updateUI();
       renderHistory();
     }
 
-    // -------------------------
-    // 4️⃣ Actualizare UI
-    // -------------------------
     function updateUI() {
       document.getElementById("total").innerText = total;
 
@@ -114,9 +106,6 @@
       document.getElementById("profit").innerText = profit;
     }
 
-    // -------------------------
-    // 5️⃣ Randează istoricul
-    // -------------------------
     function renderHistory() {
       const tbody = document.getElementById("history");
       tbody.innerHTML = "";
@@ -131,9 +120,6 @@
       });
     }
 
-    // -------------------------
-    // 6️⃣ Adaugă bani
-    // -------------------------
     async function addMoney() {
       const amountInput = document.getElementById("amount");
       const dateInput = document.getElementById("date");
@@ -155,7 +141,6 @@
       const { error } = await supabase.from('savings').insert([
         { date: date, amount: amount, total: total }
       ]);
-
       if (error) {
         console.error("Eroare la inserare:", error);
         alert("Eroare la salvare! Verifică permisiunile Supabase.");
@@ -168,9 +153,6 @@
       renderHistory();
     }
 
-    // -------------------------
-    // 7️⃣ Reset
-    // -------------------------
     async function reset() {
       if (!confirm("Sigur vrei să resetezi tot?")) return;
 
@@ -186,15 +168,9 @@
       renderHistory();
     }
 
-    // -------------------------
-    // 8️⃣ Evenimente
-    // -------------------------
     document.getElementById("addBtn").addEventListener("click", addMoney);
     document.getElementById("resetBtn").addEventListener("click", reset);
 
-    // -------------------------
-    // 9️⃣ Încarcă datele la start
-    // -------------------------
     loadData();
   </script>
 </body>
