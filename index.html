@@ -17,7 +17,7 @@
 </head>
 <body>
   <h2>💰 Economiile mele online</h2>
- <!-- <p>Scop: <b>11,111 €</b></p> -->
+  <p>Scop: <b>11,111 €</b></p>
   <p>Total adunat: <span id="total">0</span> €</p>
 
   <div class="progress-bar">
@@ -49,15 +49,18 @@
   <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
   <script>
+    // 1️⃣ Creează clientul Supabase înainte de orice apel
     const supabaseUrl = "https://hhsebjsbqtvmpugvlbix.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhoc2VianNicXR2bXB1Z3ZsYml4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMjE3MjgsImV4cCI6MjA3Mzc5NzcyOH0.p9_Nx4xtOr3YaNC2KFW6gRk-PGp9LtcFJbFbdTd2e2Q";
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+    // 2️⃣ Setări generale
     const goal = 11111;
     const taxes = 3000;
     const car = 5000;
     let total = 0;
 
+    // 3️⃣ Încarcă datele din Supabase
     async function loadData() {
       const { data, error } = await supabase
         .from('savings')
@@ -69,20 +72,16 @@
         return;
       }
 
-      if (data.length) {
-        total = data[data.length - 1].total;
-      } else {
-        total = 0;
-      }
-
+      total = data.length ? data[data.length - 1].total : 0;
       renderHistory(data);
       updateUI();
     }
 
+    // 4️⃣ Actualizează UI-ul
     function updateUI() {
       document.getElementById("total").innerText = total;
 
-      // progres
+      // Bara de progres
       let percent = Math.min((total / goal) * 100, 100);
       document.getElementById("progress").style.width = percent + "%";
       document.getElementById("progress").innerText = Math.floor(percent) + "%";
@@ -93,6 +92,7 @@
       document.getElementById("profit").innerText = profit;
     }
 
+    // 5️⃣ Randează istoricul
     function renderHistory(data) {
       const tbody = document.getElementById("history");
       tbody.innerHTML = "";
@@ -107,6 +107,7 @@
       });
     }
 
+    // 6️⃣ Adaugă bani
     async function addMoney() {
       const amountInput = document.getElementById("amount");
       const dateInput = document.getElementById("date");
@@ -130,19 +131,19 @@
 
       if (error) {
         console.error("Eroare la inserare:", error);
+        alert("Eroare la salvare! Verifică permisiunile Supabase.");
       }
 
       amountInput.value = "";
       dateInput.value = "";
-
       loadData();
     }
 
+    // 7️⃣ Eveniment click
     document.getElementById("addBtn").addEventListener("click", addMoney);
 
-    // La încărcare
+    // 8️⃣ La încărcare
     loadData();
   </script>
 </body>
 </html>
-
