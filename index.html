@@ -47,7 +47,16 @@
   </table>
 
   <!-- Supabase JS -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+  <script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
+  const supabaseUrl = "https://hhsebjsbqtvmpugvlbix.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhoc2VianNicXR2bXB1Z3ZsYml4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMjE3MjgsImV4cCI6MjA3Mzc5NzcyOH0.p9_Nx4xtOr3YaNC2KFW6gRk-PGp9LtcFJbFbdTd2e2Q";
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  // aici poți pune tot codul JS care folosește supabase
+</script>
+
   <script>
     const supabaseUrl = "https://hhsebjsbqtvmpugvlbix.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhoc2VianNicXR2bXB1Z3ZsYml4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMjE3MjgsImV4cCI6MjA3Mzc5NzcyOH0.p9_Nx4xtOr3YaNC2KFW6gRk-PGp9LtcFJbFbdTd2e2Q";
@@ -166,3 +175,4 @@
       historyData = [];
       updateUI();
       renderHistory();
+
