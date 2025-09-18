@@ -2,12 +2,10 @@
 <html lang="ro">
 <head>
   <meta charset="UTF-8">
-  <title>Economiile mele</title>
+  <title>Economiile mele online</title>
   <style>
     body { font-family: Arial, sans-serif; max-width: 500px; margin: 50px auto; text-align: center; }
     input, button { padding: 10px; margin: 5px; width: 80%; }
-    .progress-bar { width: 100%; background: #ddd; border-radius: 10px; margin: 20px 0; }
-    .progress { height: 30px; background: green; width: 0%; border-radius: 10px; color: white; text-align: center; line-height: 30px; transition: width 0.3s; }
     .result { margin: 15px 0; font-size: 18px; }
     table { border-collapse: collapse; width: 100%; margin-top: 20px; }
     th, td { border: 1px solid #444; padding: 6px; text-align: center; }
@@ -16,21 +14,13 @@
   </style>
 </head>
 <body>
-  <h2>💰 Economiile mele</h2>
-  
-  <!-- <p>Scop: <b>11,111 €</b></p> -->
-
-
-  <h1><p>Total adunat: <span id="total">0</span> €</p></h1>
-
-  <div class="progress-bar">
-    <div class="progress" id="progress">0%</div>
-  </div>
+  <h2>💰 Economiile mele online</h2>
+  <p>Scop: <b>11,111 €</b></p>
+  <p>Total adunat: <span id="total">0</span> €</p>
 
   <input type="number" id="amount" placeholder="Introduce suma (pozitiv sau negativ)">
   <input type="date" id="date">
   <button id="addBtn">Adaugă</button>
-  <button id="resetBtn">Resetează</button>
 
   <div class="result">
     📊 Impozite: <b><span id="taxes">3000</span> €</b><br>
@@ -50,37 +40,50 @@
     <tbody id="history"></tbody>
   </table>
 
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
   <script>
-    const goal = 11111;
+    const supabaseUrl = "https://hhsebjsbqtvmpugvlbix.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhoc2VianNicXR2bXB1Z3ZsYml4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMjE3MjgsImV4cCI6MjA3Mzc5NzcyOH0.p9_Nx4xtOr3YaNC2KFW6gRk-PGp9LtcFJbFbdTd2e2Q"; 
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
     const taxes = 3000;
     const car = 5000;
+    let total = 0;
 
-    let total = localStorage.getItem("savings") ? parseInt(localStorage.getItem("savings")) : 0;
-    let history = localStorage.getItem("history") ? JSON.parse(localStorage.getItem("history")) : [];
+    async function loadData() {
+      const { data, error } = await supabase
+        .from('savings')
+        .select('*')
+        .order('id', { ascending: true });
+
+      if (error) {
+        console.error("Eroare la citirea datelor:", error);
+        return;
+      }
+
+      if (data.length) {
+        total = data[data.length - 1].total;
+      } else {
+        total = 0;
+      }
+
+      renderHistory(data);
+      updateUI();
+    }
 
     function updateUI() {
       document.getElementById("total").innerText = total;
-
-      // Bara de progres: permite și valori negative
-      let percent = total / goal * 100;
-      percent = Math.max(Math.min(percent, 100), -100); // limitează între -100% și 100%
-      const progress = document.getElementById("progress");
-      progress.style.width = Math.abs(percent) + "%";
-      progress.style.backgroundColor = percent >= 0 ? "green" : "red";
-      progress.innerText = Math.floor(percent) + "%";
-
-      let profit = total - taxes - car;
+      const profit = total - taxes - car;
       document.getElementById("taxes").innerText = taxes;
       document.getElementById("car").innerText = car;
       document.getElementById("profit").innerText = profit;
-
-      renderHistory();
     }
 
-    function renderHistory() {
+    function renderHistory(data) {
       const tbody = document.getElementById("history");
       tbody.innerHTML = "";
-      history.forEach(item => {
+      data.forEach(item => {
         const row = document.createElement("tr");
         row.innerHTML = `
           <td>${item.date}</td>
@@ -91,7 +94,7 @@
       });
     }
 
-    function addMoney() {
+    async function addMoney() {
       const amountInput = document.getElementById("amount");
       const dateInput = document.getElementById("date");
       const amount = parseInt(amountInput.value);
@@ -107,28 +110,25 @@
       }
 
       total += amount;
-      history.push({ date: date, amount: amount, total: total });
 
-      localStorage.setItem("savings", total);
-      localStorage.setItem("history", JSON.stringify(history));
+      const { error } = await supabase.from('savings').insert([
+        { amount: amount, date: date, total: total }
+      ]);
+
+      if (error) {
+        console.error("Eroare la inserare:", error);
+      }
 
       amountInput.value = "";
       dateInput.value = "";
 
-      updateUI();
-    }
-
-    function reset() {
-      total = 0;
-      history = [];
-      localStorage.clear();
-      updateUI();
+      loadData();
     }
 
     document.getElementById("addBtn").addEventListener("click", addMoney);
-    document.getElementById("resetBtn").addEventListener("click", reset);
 
-    updateUI();
+    // La încărcare, citim datele
+    loadData();
   </script>
 </body>
 </html>
