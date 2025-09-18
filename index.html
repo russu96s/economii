@@ -48,102 +48,24 @@
 
   <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
-  <script>
-    // 1️⃣ Creează clientul Supabase înainte de orice apel
-    const supabaseUrl = "https://hhsebjsbqtvmpugvlbix.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhoc2VianNicXR2bXB1Z3ZsYml4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMjE3MjgsImV4cCI6MjA3Mzc5NzcyOH0.p9_Nx4xtOr3YaNC2KFW6gRk-PGp9LtcFJbFbdTd2e2Q";
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+<script>
+  // 1️⃣ Creează clientul Supabase
+  const supabaseUrl = "https://hhsebjsbqtvmpugvlbix.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhoc2VianNicXR2bXB1Z3ZsYml4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMjE3MjgsImV4cCI6MjA3Mzc5NzcyOH0.p9_Nx4xtOr3YaNC2KFW6gRk-PGp9LtcFJbFbdTd2e2Q";
+  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    // 2️⃣ Setări generale
-    const goal = 11111;
-    const taxes = 3000;
-    const car = 5000;
-    let total = 0;
+  // 2️⃣ Acum poți folosi supabase în orice funcție
+  async function loadData() {
+    const { data, error } = await supabase
+      .from('savings')
+      .select('*')
+      .order('id', { ascending: true });
+    console.log(data, error);
+  }
 
-    // 3️⃣ Încarcă datele din Supabase
-    async function loadData() {
-      const { data, error } = await supabase
-        .from('savings')
-        .select('*')
-        .order('id', { ascending: true });
+  loadData(); // OK, clientul există deja
+</script>
 
-      if (error) {
-        console.error("Eroare la citirea datelor:", error);
-        return;
-      }
-
-      total = data.length ? data[data.length - 1].total : 0;
-      renderHistory(data);
-      updateUI();
-    }
-
-    // 4️⃣ Actualizează UI-ul
-    function updateUI() {
-      document.getElementById("total").innerText = total;
-
-      // Bara de progres
-      let percent = Math.min((total / goal) * 100, 100);
-      document.getElementById("progress").style.width = percent + "%";
-      document.getElementById("progress").innerText = Math.floor(percent) + "%";
-
-      const profit = total - taxes - car;
-      document.getElementById("taxes").innerText = taxes;
-      document.getElementById("car").innerText = car;
-      document.getElementById("profit").innerText = profit;
-    }
-
-    // 5️⃣ Randează istoricul
-    function renderHistory(data) {
-      const tbody = document.getElementById("history");
-      tbody.innerHTML = "";
-      data.forEach(item => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${item.date}</td>
-          <td class="${item.amount < 0 ? 'negative' : 'positive'}">${item.amount}</td>
-          <td>${item.total}</td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
-
-    // 6️⃣ Adaugă bani
-    async function addMoney() {
-      const amountInput = document.getElementById("amount");
-      const dateInput = document.getElementById("date");
-      const amount = parseInt(amountInput.value);
-      const date = dateInput.value;
-
-      if (!date) {
-        alert("Introduceți data suplinirii!");
-        return;
-      }
-      if (isNaN(amount) || amount === 0) {
-        alert("Introduceți o sumă validă (pozitivă sau negativă).");
-        return;
-      }
-
-      total += amount;
-
-      const { error } = await supabase.from('savings').insert([
-        { amount: amount, date: date, total: total }
-      ]);
-
-      if (error) {
-        console.error("Eroare la inserare:", error);
-        alert("Eroare la salvare! Verifică permisiunile Supabase.");
-      }
-
-      amountInput.value = "";
-      dateInput.value = "";
-      loadData();
-    }
-
-    // 7️⃣ Eveniment click
-    document.getElementById("addBtn").addEventListener("click", addMoney);
-
-    // 8️⃣ La încărcare
-    loadData();
-  </script>
 </body>
 </html>
+
