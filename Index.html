@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <title>Economiile mele</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 500px; margin: 50px auto; text-align: center; }
+    input, button { padding: 10px; margin: 5px; width: 80%; }
+    .progress-bar { width: 100%; background: #ddd; border-radius: 10px; margin: 20px 0; }
+    .progress { height: 30px; background: green; width: 0%; border-radius: 10px; color: white; text-align: center; line-height: 30px; transition: width 0.3s; }
+    .result { margin: 15px 0; font-size: 18px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #444; padding: 6px; text-align: center; }
+    .negative { color: red; }
+    .positive { color: green; }
+  </style>
+</head>
+<body>
+  <h2>💰 Economiile mele</h2>
+  
+  <!-- <p>Scop: <b>11,111 €</b></p> -->
+
+
+  <h1><p>Total adunat: <span id="total">0</span> €</p></h1>
+
+  <div class="progress-bar">
+    <div class="progress" id="progress">0%</div>
+  </div>
+
+  <input type="number" id="amount" placeholder="Introduce suma (pozitiv sau negativ)">
+  <input type="date" id="date">
+  <button id="addBtn">Adaugă</button>
+  <button id="resetBtn">Resetează</button>
+
+  <div class="result">
+    📊 Impozite: <b><span id="taxes">3000</span> €</b><br>
+    🚗 Mașină: <b><span id="car">5000</span> €</b><br>
+    ✅ Profit net: <b><span id="profit">0</span> €</b>
+  </div>
+
+  <h3>Istoric supliniri</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Suma</th>
+        <th>Sold după modificare</th>
+      </tr>
+    </thead>
+    <tbody id="history"></tbody>
+  </table>
+
+  <script>
+    const goal = 11111;
+    const taxes = 3000;
+    const car = 5000;
+
+    let total = localStorage.getItem("savings") ? parseInt(localStorage.getItem("savings")) : 0;
+    let history = localStorage.getItem("history") ? JSON.parse(localStorage.getItem("history")) : [];
+
+    function updateUI() {
+      document.getElementById("total").innerText = total;
+
+      // Bara de progres: permite și valori negative
+      let percent = total / goal * 100;
+      percent = Math.max(Math.min(percent, 100), -100); // limitează între -100% și 100%
+      const progress = document.getElementById("progress");
+      progress.style.width = Math.abs(percent) + "%";
+      progress.style.backgroundColor = percent >= 0 ? "green" : "red";
+      progress.innerText = Math.floor(percent) + "%";
+
+      let profit = total - taxes - car;
+      document.getElementById("taxes").innerText = taxes;
+      document.getElementById("car").innerText = car;
+      document.getElementById("profit").innerText = profit;
+
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const tbody = document.getElementById("history");
+      tbody.innerHTML = "";
+      history.forEach(item => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${item.date}</td>
+          <td class="${item.amount < 0 ? 'negative' : 'positive'}">${item.amount}</td>
+          <td>${item.total}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function addMoney() {
+      const amountInput = document.getElementById("amount");
+      const dateInput = document.getElementById("date");
+      const amount = parseInt(amountInput.value);
+      const date = dateInput.value;
+
+      if (!date) {
+        alert("Introduceți data suplinirii!");
+        return;
+      }
+      if (isNaN(amount) || amount === 0) {
+        alert("Introduceți o sumă validă (pozitivă sau negativă).");
+        return;
+      }
+
+      total += amount;
+      history.push({ date: date, amount: amount, total: total });
+
+      localStorage.setItem("savings", total);
+      localStorage.setItem("history", JSON.stringify(history));
+
+      amountInput.value = "";
+      dateInput.value = "";
+
+      updateUI();
+    }
+
+    function reset() {
+      total = 0;
+      history = [];
+      localStorage.clear();
+      updateUI();
+    }
+
+    document.getElementById("addBtn").addEventListener("click", addMoney);
+    document.getElementById("resetBtn").addEventListener("click", reset);
+
+    updateUI();
+  </script>
+</body>
+</html>
