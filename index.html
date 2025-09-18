@@ -175,7 +175,6 @@
     async function reset() {
       if (!confirm("Sigur vrei să resetezi tot?")) return;
 
-      // Șterge toate înregistrările din Supabase
       const { error } = await supabase.from('savings').delete().neq('id', 0);
       if (error) {
         console.error("Eroare la reset:", error);
