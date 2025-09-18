@@ -6,19 +6,18 @@
   <style>
     body { font-family: Arial, sans-serif; max-width: 500px; margin: 50px auto; text-align: center; }
     input, button { padding: 10px; margin: 5px; width: 80%; }
+    .progress-bar { width: 100%; background: #ddd; border-radius: 10px; margin: 20px 0; }
+    .progress { height: 30px; background: green; width: 0%; border-radius: 10px; color: white; text-align: center; line-height: 30px; transition: width 0.3s; }
     .result { margin: 15px 0; font-size: 18px; }
     table { border-collapse: collapse; width: 100%; margin-top: 20px; }
     th, td { border: 1px solid #444; padding: 6px; text-align: center; }
     .negative { color: red; }
     .positive { color: green; }
-    .progress-bar { width: 100%; background: #ddd; border-radius: 10px; margin: 20px 0; height: 30px; }
-    .progress { height: 30px; background: green; width: 0%; border-radius: 10px; color: white; text-align: center; line-height: 30px; }
   </style>
 </head>
 <body>
   <h2>💰 Economiile mele online</h2>
-  <p>Scop: <b>11,111 €</b></p>
-  <p>Total adunat: <span id="total">0</span> €</p>
+  <h1><p>Total adunat: <span id="total">0</span> €</p></h1>
 
   <div class="progress-bar">
     <div class="progress" id="progress">0%</div>
@@ -27,6 +26,7 @@
   <input type="number" id="amount" placeholder="Introduce suma (pozitiv sau negativ)">
   <input type="date" id="date">
   <button id="addBtn">Adaugă</button>
+  <button id="resetBtn">Resetează</button>
 
   <div class="result">
     📊 Impozite: <b><span id="taxes">3000</span> €</b><br>
@@ -49,18 +49,25 @@
   <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
   <script>
-    // 1️⃣ Inițializează clientul Supabase înainte de orice alt cod
+    // -------------------------
+    // 1️⃣ Inițializare Supabase
+    // -------------------------
     const supabaseUrl = "https://hhsebjsbqtvmpugvlbix.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhoc2VianNicXR2bXB1Z3ZsYml4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMjE3MjgsImV4cCI6MjA3Mzc5NzcyOH0.p9_Nx4xtOr3YaNC2KFW6gRk-PGp9LtcFJbFbdTd2e2Q";
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+    // -------------------------
     // 2️⃣ Setări generale
+    // -------------------------
     const goal = 11111;
     const taxes = 3000;
     const car = 5000;
     let total = 0;
+    let history = [];
 
+    // -------------------------
     // 3️⃣ Încarcă datele din Supabase
+    // -------------------------
     async function loadData() {
       const { data, error } = await supabase
         .from('savings')
@@ -72,19 +79,35 @@
         return;
       }
 
-      total = data.length ? data[data.length - 1].total : 0;
-      renderHistory(data);
+      if (data.length) {
+        total = data[data.length - 1].total;
+        history = data.map(item => ({
+          date: item.date,
+          amount: item.amount,
+          total: item.total
+        }));
+      } else {
+        total = 0;
+        history = [];
+      }
+
       updateUI();
+      renderHistory();
     }
 
-    // 4️⃣ Actualizează UI-ul
+    // -------------------------
+    // 4️⃣ Actualizare UI
+    // -------------------------
     function updateUI() {
       document.getElementById("total").innerText = total;
 
       // Bara de progres
-      let percent = Math.min((total / goal) * 100, 100);
-      document.getElementById("progress").style.width = percent + "%";
-      document.getElementById("progress").innerText = Math.floor(percent) + "%";
+      let percent = total / goal * 100;
+      percent = Math.max(Math.min(percent, 100), -100);
+      const progress = document.getElementById("progress");
+      progress.style.width = Math.abs(percent) + "%";
+      progress.style.backgroundColor = percent >= 0 ? "green" : "red";
+      progress.innerText = Math.floor(percent) + "%";
 
       const profit = total - taxes - car;
       document.getElementById("taxes").innerText = taxes;
@@ -92,11 +115,13 @@
       document.getElementById("profit").innerText = profit;
     }
 
+    // -------------------------
     // 5️⃣ Randează istoricul
-    function renderHistory(data) {
+    // -------------------------
+    function renderHistory() {
       const tbody = document.getElementById("history");
       tbody.innerHTML = "";
-      data.forEach(item => {
+      history.forEach(item => {
         const row = document.createElement("tr");
         row.innerHTML = `
           <td>${item.date}</td>
@@ -107,7 +132,9 @@
       });
     }
 
+    // -------------------------
     // 6️⃣ Adaugă bani
+    // -------------------------
     async function addMoney() {
       const amountInput = document.getElementById("amount");
       const dateInput = document.getElementById("date");
@@ -124,9 +151,10 @@
       }
 
       total += amount;
+      history.push({ date: date, amount: amount, total: total });
 
       const { error } = await supabase.from('savings').insert([
-        { amount: amount, date: date, total: total }
+        { date: date, amount: amount, total: total }
       ]);
 
       if (error) {
@@ -136,13 +164,39 @@
 
       amountInput.value = "";
       dateInput.value = "";
-      loadData();
+
+      updateUI();
+      renderHistory();
     }
 
-    // 7️⃣ Eveniment click
-    document.getElementById("addBtn").addEventListener("click", addMoney);
+    // -------------------------
+    // 7️⃣ Reset
+    // -------------------------
+    async function reset() {
+      if (!confirm("Sigur vrei să resetezi tot?")) return;
 
-    // 8️⃣ La încărcare
+      // Șterge toate înregistrările din Supabase
+      const { error } = await supabase.from('savings').delete().neq('id', 0);
+      if (error) {
+        console.error("Eroare la reset:", error);
+        return;
+      }
+
+      total = 0;
+      history = [];
+      updateUI();
+      renderHistory();
+    }
+
+    // -------------------------
+    // 8️⃣ Evenimente
+    // -------------------------
+    document.getElementById("addBtn").addEventListener("click", addMoney);
+    document.getElementById("resetBtn").addEventListener("click", reset);
+
+    // -------------------------
+    // 9️⃣ Încarcă datele la start
+    // -------------------------
     loadData();
   </script>
 </body>
